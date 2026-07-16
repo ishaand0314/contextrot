@@ -1,0 +1,52 @@
+{
+  "name": "contextrot",
+  "version": "0.1.0",
+  "description": "Analyzes an AI agent session transcript and reports how much of the context window is live signal versus rot, plus a projected turns-until-compaction estimate.",
+  "bin": {
+    "contextrot": "bin/contextrot.js"
+  },
+  "main": "dist/cli.js",
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "claude-code",
+    "context-window",
+    "llm",
+    "agent",
+    "cli",
+    "observability",
+    "token-counter",
+    "claude"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ishaand0314/contextrot.git"
+  },
+  "homepage": "https://github.com/ishaand0314/contextrot#readme",
+  "bugs": {
+    "url": "https://github.com/ishaand0314/contextrot/issues"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "ishaand0314",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "gpt-tokenizer": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.10"
+  }
+}
