@@ -4,7 +4,7 @@
 
 If you find a security vulnerability in contextrot, do not open a public GitHub issue.
 
-Report it privately by emailing the maintainer at the address listed on the [npm package page](https://www.npmjs.com/package/contextrot) or via a private security advisory on the [GitHub repository](https://github.com/ishaand0314/contextrot). Include:
+Report it privately by emailing the maintainer at the address listed on the [npm package page](https://www.npmjs.com/package/ctxrot) or via a private security advisory on the [GitHub repository](https://github.com/ishaand0314/contextrot). Include:
 
 - A description of the vulnerability and its potential impact.
 - Steps to reproduce it, including a minimal transcript or input if relevant.

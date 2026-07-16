@@ -2,9 +2,11 @@
 
 Measure how much of your AI agent session's context window is live signal versus rot.
 
-[![npm version](https://img.shields.io/npm/v/contextrot.svg)](https://www.npmjs.com/package/contextrot)
+[![npm version](https://img.shields.io/npm/v/ctxrot.svg)](https://www.npmjs.com/package/ctxrot)
 [![CI](https://github.com/ishaand0314/contextrot/actions/workflows/ci.yml/badge.svg)](https://github.com/ishaand0314/contextrot/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-source--available-blue.svg)](./LICENSE)
+
+Published on npm as `ctxrot`; the CLI command it installs is `contextrot`.
 
 ## Playground
 
@@ -23,29 +25,30 @@ contextrot reads a session transcript and tells you how much of it is dead weigh
 ## Quick Start
 
 ```
-npx contextrot --demo
+npx -p ctxrot contextrot --demo
 ```
 
 This runs contextrot against a bundled sample transcript so you can see the report format without pointing it at your own data.
 
 ## Installation
 
-Run it directly with npx, no install required:
+The npm package is `ctxrot`; the CLI command it installs is `contextrot`. Because those names differ, run it with npx by naming the package with `-p` and the command after it (this form works on Windows too):
 
 ```
-npx contextrot --demo
+npx -p ctxrot contextrot --demo
 ```
 
-Or install it globally:
+Or install it globally and call `contextrot` directly:
 
 ```
-npm install -g contextrot
+npm install -g ctxrot
+contextrot --demo
 ```
 
 Or add it as a dev dependency for use in scripts or CI:
 
 ```
-npm install --save-dev contextrot
+npm install --save-dev ctxrot
 ```
 
 Requires Node.js 20 or later.
@@ -80,7 +83,7 @@ If you pass neither `--demo` nor `--file`, contextrot looks for the most recentl
 See the report format without any transcript of your own:
 
 ```
-npx contextrot --demo
+npx -p ctxrot contextrot --demo
 ```
 
 Sample output:
@@ -113,7 +116,7 @@ Projection: at this rate, roughly 783 turns until compaction (context window 1.9
 Point `--file` at a Claude Code session's `.jsonl` file:
 
 ```
-npx contextrot --file ~/.claude/projects/my-project/some-session.jsonl
+npx -p ctxrot contextrot --file ~/.claude/projects/my-project/some-session.jsonl
 ```
 
 `--file` also accepts a generic JSON array of turns, for transcripts from other agent tools. See [Library usage](#library-usage) for the shape contextrot expects.
@@ -121,7 +124,7 @@ npx contextrot --file ~/.claude/projects/my-project/some-session.jsonl
 ### JSON output for scripting
 
 ```
-npx contextrot --demo --json
+npx -p ctxrot contextrot --demo --json
 ```
 
 This prints the full analysis report (token totals, per-category breakdown, top offenders, and the projection) as a single JSON object, suitable for piping into `jq` or another script.
@@ -129,7 +132,7 @@ This prints the full analysis report (token totals, per-category breakdown, top 
 ### CI gating on a rot threshold
 
 ```
-npx contextrot --file ./session.jsonl --threshold 40
+npx -p ctxrot contextrot --file ./session.jsonl --threshold 40
 ```
 
 If the transcript's rot percentage exceeds 40, contextrot exits with status 1. Use this in a CI step to catch sessions that are accumulating too much dead weight before they get committed as fixtures or shared as examples.
@@ -152,7 +155,7 @@ Everything above is heuristic. Transcripts are messy, and the goal is a useful s
 contextrot's parsing, classification, and analysis logic is available as a library, independent of the CLI.
 
 ```typescript
-import { analyze, parseClaudeCodeTranscript, project } from 'contextrot';
+import { analyze, parseClaudeCodeTranscript, project } from 'ctxrot';
 import * as fs from 'fs';
 
 const raw = fs.readFileSync('session.jsonl', 'utf-8');

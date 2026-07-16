@@ -1,5 +1,5 @@
 {
-  "name": "contextrot",
+  "name": "ctxrot",
   "version": "0.1.0",
   "description": "Analyzes an AI agent session transcript and reports how much of the context window is live signal versus rot, plus a projected turns-until-compaction estimate.",
   "bin": {
