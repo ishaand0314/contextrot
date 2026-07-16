@@ -18,6 +18,8 @@ None of this is a bug in any single tool call. Each read, each reminder, each sn
 
 contextrot reads a session transcript and tells you how much of it is dead weight. It classifies every entry into a rot category or marks it as live, reports token totals per category, and projects roughly how many turns remain before the context window fills up at the current rate. Point it at a real transcript to see where the tokens are going, or use it in CI to fail a build when a session's rot percentage crosses a threshold.
 
+![contextrot demo report](./docs/screenshots/demo-report.jpg)
+
 ## Quick Start
 
 ```
