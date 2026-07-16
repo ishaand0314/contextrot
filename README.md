@@ -6,6 +6,10 @@ Measure how much of your AI agent session's context window is live signal versus
 [![CI](https://github.com/ishaand0314/contextrot/actions/workflows/ci.yml/badge.svg)](https://github.com/ishaand0314/contextrot/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-source--available-blue.svg)](./LICENSE)
 
+## Playground
+
+Try it in your browser, no install required: [ishaand0314.github.io/contextrot](https://ishaand0314.github.io/contextrot/). Load the bundled demo session or paste your own transcript and see the report instantly.
+
 ## Why this exists
 
 Long-running coding agent sessions accumulate cruft. A file gets read, then read again a dozen turns later because the agent forgot it already had the contents. A tool result sits in the transcript long after the edit that made it stale. A system reminder repeats the same warning every few turns. A todo-list snapshot gets re-sent every time one item changes state, leaving the old snapshots behind.

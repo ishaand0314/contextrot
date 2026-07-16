@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>contextrot playground</title>
+<meta name="description" content="Try contextrot in your browser: load a demo agent transcript or paste your own JSON and see a live-vs-rot context analysis, no install required.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --bg-soft: #f6f7f9;
+    --bg-card: #ffffff;
+    --border: #dfe3e8;
+    --text: #16181d;
+    --text-muted: #565d6b;
+    --link: #1757c9;
+    --accent: #2f6fed;
+    --live: #2f9e5f;
+    --rot: #d1483f;
+    --code-bg: #f0f2f5;
+    --shadow: 0 1px 2px rgba(20, 24, 33, 0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --bg-soft: #1b1e24;
+      --bg-card: #1c1f26;
+      --border: #2c313b;
+      --text: #e7e9ee;
+      --text-muted: #9aa2b1;
+      --link: #7ab0ff;
+      --accent: #5b8def;
+      --live: #4cbf7d;
+      --rot: #e2685f;
+      --code-bg: #10121600;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-soft: #f6f7f9;
+    --bg-card: #ffffff;
+    --border: #dfe3e8;
+    --text: #16181d;
+    --text-muted: #565d6b;
+    --link: #1757c9;
+    --accent: #2f6fed;
+    --live: #2f9e5f;
+    --rot: #d1483f;
+    --code-bg: #f0f2f5;
+    --shadow: 0 1px 2px rgba(20, 24, 33, 0.06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a;
+    --bg-soft: #1b1e24;
+    --bg-card: #1c1f26;
+    --border: #2c313b;
+    --text: #e7e9ee;
+    --text-muted: #9aa2b1;
+    --link: #7ab0ff;
+    --accent: #5b8def;
+    --live: #4cbf7d;
+    --rot: #e2685f;
+    --code-bg: #262b34;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    margin: 0 0 0.5rem;
+  }
+  h2 {
+    font-size: 1.15rem;
+    margin: 2rem 0 0.75rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.4rem;
+  }
+  p { margin: 0.6rem 0; }
+  a { color: var(--link); }
+
+  .intro {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-size: 0.97rem;
+    color: var(--text);
+  }
+  .intro .links {
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .intro .links a { margin-right: 1rem; }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1rem 0;
+    align-items: center;
+  }
+
+  button {
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 0.55rem 1rem;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+  }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  button:hover { filter: brightness(1.06); }
+  button:active { filter: brightness(0.96); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+    color: var(--text);
+    resize: vertical;
+  }
+
+  select {
+    font: inherit;
+    font-size: 0.88rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+  }
+
+  label.field-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: block;
+    margin: 0.9rem 0 0.3rem;
+  }
+
+  .status {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    min-height: 1.2em;
+  }
+  .status.error { color: var(--rot); }
+
+  .report { margin-top: 1.5rem; }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .stat-card .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-top: 0.15rem;
+  }
+  .stat-card .value.live { color: var(--live); }
+  .stat-card .value.rot { color: var(--rot); }
+
+  .bar-outer {
+    width: 100%;
+    height: 28px;
+    border-radius: 7px;
+    overflow: hidden;
+    display: flex;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+  }
+  .bar-live { background: var(--live); }
+  .bar-rot { background: var(--rot); }
+  .bar-legend {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .bar-legend .swatch {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 3px;
+    margin-right: 0.35rem;
+    vertical-align: -1px;
+  }
+
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    min-width: 480px;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td.summary-cell {
+    white-space: normal;
+    word-break: break-word;
+    min-width: 220px;
+  }
+  th {
+    background: var(--bg-soft);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+  }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--bg-soft); }
+
+  .cat-pill {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    background: var(--code-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .projection {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow);
+  }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+
+  .note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+  }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 1.4rem; }
+    .stat-card .value { font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>contextrot playground</h1>
+  <div class="intro">
+    <p>
+      Long AI coding-agent sessions build up clutter in their context window: a file read twice,
+      a tool result that's stale after a later edit, a system reminder repeated over and over,
+      a huge log that's skimmed once and never looked at again. contextrot reads a session
+      transcript and measures how much of it is still useful ("live") versus dead weight ("rot").
+      It reports token totals by rot category and estimates how many turns are left before the
+      conversation runs out of context window and gets compacted.
+    </p>
+    <p>
+      This page runs entirely in your browser. Nothing you paste here is uploaded anywhere.
+    </p>
+    <div class="links">
+      <a href="https://github.com/ishaand0314/contextrot" target="_blank" rel="noopener">GitHub repo</a>
+      <a href="https://www.npmjs.com/package/contextrot" target="_blank" rel="noopener">npm package</a>
+    </div>
+  </div>
+
+  <h2>1. Try it</h2>
+  <div class="controls">
+    <button class="primary" id="btn-demo">Load demo session</button>
+    <button id="btn-clear">Clear</button>
+    <label class="field-label" for="model-select" style="margin:0;">Model:</label>
+    <select id="model-select"></select>
+  </div>
+
+  <label class="field-label" for="input-json">Or paste your own JSON transcript (an array of transcript entries)</label>
+  <textarea id="input-json" placeholder='[{"type":"user_message","role":"user","content":"..."}, {"type":"tool_use","role":"assistant","toolName":"Read","toolUseId":"tu_1","filePath":"src/foo.ts"}, ...]'></textarea>
+  <div class="controls">
+    <button class="primary" id="btn-analyze">Analyze</button>
+  </div>
+  <div class="status" id="status"></div>
+
+  <div class="report" id="report" hidden>
+    <h2>2. Report</h2>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="label">Total tokens</div>
+        <div class="value" id="stat-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Live tokens</div>
+        <div class="value live" id="stat-live">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Rot tokens</div>
+        <div class="value rot" id="stat-rot">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Rot percentage</div>
+        <div class="value rot" id="stat-pct">0%</div>
+      </div>
+    </div>
+
+    <div class="bar-outer" id="bar-outer">
+      <div class="bar-live" id="bar-live" style="width:0%"></div>
+      <div class="bar-rot" id="bar-rot" style="width:0%"></div>
+    </div>
+    <div class="bar-legend">
+      <span><span class="swatch" style="background:var(--live)"></span>Live</span>
+      <span><span class="swatch" style="background:var(--rot)"></span>Rot</span>
+    </div>
+
+    <h2>Breakdown by rot category</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Category</th><th>Count</th><th>Tokens</th></tr>
+        </thead>
+        <tbody id="category-body"></tbody>
+      </table>
+    </div>
+
+    <h2>Top offenders</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Category</th><th>Tokens</th><th>Summary</th></tr>
+        </thead>
+        <tbody id="offenders-body"></tbody>
+      </table>
+    </div>
+
+    <h2>Projection</h2>
+    <div class="projection">
+      <p id="projection-text"></p>
+      <p class="note" id="projection-note"></p>
+    </div>
+  </div>
+
+  <footer>
+    Token counts on this page are an approximation (a character/word-based heuristic), not the
+    exact BPE tokenizer the <code>contextrot</code> npm package uses, so numbers here may differ
+    slightly from the CLI. Classification and analysis logic is a faithful port of the package's
+    <code>classify()</code>, <code>analyze()</code>, and <code>project()</code> functions.
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------------------------------------------------------------------
+  // Theme toggle support: viewer's theme picker (if any) stamps
+  // data-theme on <html>; CSS above reacts to both that and prefers-color-scheme.
+  // No JS needed here beyond what the host page already provides.
+  // ---------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------
+  // Approximate token counter (browser-safe stand-in for gpt-tokenizer).
+  // Blends a character-based estimate with a word-based estimate, which
+  // tracks BPE token counts for English text/code reasonably well without
+  // shipping a multi-megabyte BPE vocab into a static page.
+  // ---------------------------------------------------------------------
+  function countTokens(text) {
+    if (!text) return 0;
+    var str = String(text);
+    if (str.length === 0) return 0;
+    var byChars = str.length / 4;
+    var words = str.match(/\S+/g) || [];
+    var byWords = words.length / 0.75;
+    return Math.max(1, Math.round((byChars + byWords) / 2));
+  }
+
+  // ---------------------------------------------------------------------
+  // Model context windows (ported from src/models.ts)
+  // ---------------------------------------------------------------------
+  var MODEL_CONTEXT_WINDOWS = {
+    'claude-sonnet-5': 200000,
+    'claude-opus-4.8': 200000,
+    'claude-haiku-4.5': 200000,
+    'gpt-5': 400000,
+    'gemini-2.5-pro': 1000000,
+  };
+  var DEFAULT_CONTEXT_WINDOW = 200000;
+
+  var ALL_ROT_CATEGORIES = [
+    'duplicate-read',
+    'superseded-read',
+    'repeated-tool-call',
+    'dead-system-reminder',
+    'unreferenced-large-output',
+    'stale-todo-snapshot',
+  ];
+
+  var CATEGORY_LABELS = {
+    'duplicate-read': 'Duplicate reads',
+    'superseded-read': 'Superseded reads',
+    'repeated-tool-call': 'Repeated tool calls',
+    'dead-system-reminder': 'Dead system reminders',
+    'unreferenced-large-output': 'Unreferenced large output',
+    'stale-todo-snapshot': 'Stale todo snapshots',
+  };
+
+  // ---------------------------------------------------------------------
+  // classify() -- faithful port of src/classify.ts
+  // ---------------------------------------------------------------------
+  var WRITE_TOOL_NAMES = { Write: true, Edit: true, MultiEdit: true, NotebookEdit: true };
+  var STATE_CHANGING_TOOL_NAMES = { Write: true, Edit: true, MultiEdit: true, NotebookEdit: true, Bash: true };
+  var READ_TOOL_NAMES = { Read: true, NotebookRead: true };
+
+  var LARGE_OUTPUT_TOKEN_THRESHOLD = 800;
+  var DISTINCTIVE_SUBSTRING_LENGTH = 40;
+  var DISTINCTIVE_SUBSTRING_MIN_LENGTH = 12;
+
+  function isWriteToolUse(entry) {
+    return entry.type === 'tool_use' && !!WRITE_TOOL_NAMES[entry.toolName];
+  }
+
+  function isReadToolUse(entry) {
+    return entry.type === 'tool_use' && !!READ_TOOL_NAMES[entry.toolName] && !!entry.filePath;
+  }
+
+  function toolCallKey(entry) {
+    var pseudoInput = { filePath: entry.filePath, content: entry.content };
+    return entry.toolName + '::' + JSON.stringify(pseudoInput);
+  }
+
+  function looksLikeTodoSnapshot(content) {
+    var checkboxMarkers = content.match(/\[( |x|X|-)\]/g);
+    if (checkboxMarkers && checkboxMarkers.length >= 2) return true;
+
+    var statusMarkers = content.match(/"status"\s*:\s*"(pending|completed|in_progress)"/g);
+    if (statusMarkers && statusMarkers.length >= 2) return true;
+
+    var bulletStatusMarkers = content.match(/\b(pending|completed|in_progress)\b/gi);
+    if (bulletStatusMarkers && bulletStatusMarkers.length >= 2 && /todo/i.test(content)) return true;
+
+    return false;
+  }
+
+  function systemReminderKind(content) {
+    return content.trim().slice(0, 40).toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function distinctiveSubstring(content) {
+    var trimmed = content.trim();
+    if (trimmed.length < DISTINCTIVE_SUBSTRING_MIN_LENGTH) return undefined;
+    var start = Math.floor(trimmed.length / 2);
+    var substring = trimmed.slice(start, start + DISTINCTIVE_SUBSTRING_LENGTH).trim();
+    return substring.length >= DISTINCTIVE_SUBSTRING_MIN_LENGTH ? substring : undefined;
+  }
+
+  function classify(entries) {
+    var rot = new Map();
+
+    // 1. duplicate-read
+    (function () {
+      var liveReadSeen = new Set();
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
+        if (isWriteToolUse(entry) && entry.filePath) {
+          liveReadSeen.delete(entry.filePath);
+          continue;
+        }
+        if (isReadToolUse(entry) && entry.filePath) {
+          var path = entry.filePath;
+          if (liveReadSeen.has(path)) {
+            rot.set(i, {
+              category: 'duplicate-read',
+              reason: 'Repeated read of "' + path + '" with no intervening edit/write.',
+            });
+          } else {
+            liveReadSeen.add(path);
+          }
+        }
+      }
+    })();
+
+    // 2. superseded-read
+    (function () {
+      var writeIndicesByPath = new Map();
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
+        if (isWriteToolUse(entry) && entry.filePath) {
+          var list = writeIndicesByPath.get(entry.filePath) || [];
+          list.push(i);
+          writeIndicesByPath.set(entry.filePath, list);
+        }
+      }
+
+      for (var j = 0; j < entries.length; j++) {
+        if (rot.has(j)) continue;
+        var e = entries[j];
+        if (e.type !== 'tool_result' || !e.filePath) continue;
+        var writeIndices = writeIndicesByPath.get(e.filePath);
+        if (!writeIndices) continue;
+        var hasLaterWrite = writeIndices.some(function (writeIndex) { return writeIndex > j; });
+        if (hasLaterWrite) {
+          rot.set(j, {
+            category: 'superseded-read',
+            reason: 'File "' + e.filePath + '" was written/edited later in the transcript, making this read stale.',
+          });
+        }
+      }
+    })();
+
+    // 3. repeated-tool-call
+    (function () {
+      var lastSeenAt = new Map();
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
+        if (entry.type !== 'tool_use') continue;
+
+        if (STATE_CHANGING_TOOL_NAMES[entry.toolName]) {
+          lastSeenAt.clear();
+          continue;
+        }
+
+        var key = toolCallKey(entry);
+        if (lastSeenAt.has(key)) {
+          if (!rot.has(i)) {
+            rot.set(i, {
+              category: 'repeated-tool-call',
+              reason: 'Same "' + entry.toolName + '" call repeated with identical input, no state change in between.',
+            });
+          }
+        }
+        lastSeenAt.set(key, i);
+      }
+    })();
+
+    // 4 & 5. dead-system-reminder / stale-todo-snapshot
+    (function () {
+      var indicesByKind = new Map();
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
+        if (entry.type !== 'system_reminder') continue;
+        var kind = systemReminderKind(entry.content);
+        var list = indicesByKind.get(kind) || [];
+        list.push(i);
+        indicesByKind.set(kind, list);
+      }
+
+      indicesByKind.forEach(function (indices) {
+        if (indices.length < 2) return;
+        var latest = indices[indices.length - 1];
+        for (var k = 0; k < indices.length; k++) {
+          var i2 = indices[k];
+          if (i2 === latest) continue;
+          if (rot.has(i2)) continue;
+          var entry2 = entries[i2];
+          if (entry2.type !== 'system_reminder') continue;
+          if (looksLikeTodoSnapshot(entry2.content)) {
+            rot.set(i2, {
+              category: 'stale-todo-snapshot',
+              reason: 'Superseded todo-list snapshot; a later reminder of the same kind is now live.',
+            });
+          } else {
+            rot.set(i2, {
+              category: 'dead-system-reminder',
+              reason: 'Superseded by a later system reminder of the same kind.',
+            });
+          }
+        }
+      });
+    })();
+
+    // 6. unreferenced-large-output
+    (function () {
+      for (var i = 0; i < entries.length; i++) {
+        if (rot.has(i)) continue;
+        var entry = entries[i];
+        if (entry.type !== 'tool_result') continue;
+
+        var tokens = countTokens(entry.content);
+        if (tokens <= LARGE_OUTPUT_TOKEN_THRESHOLD) continue;
+
+        var substring = distinctiveSubstring(entry.content);
+        if (!substring) continue;
+
+        var isReferencedLater = entries.slice(i + 1).some(function (later) {
+          var text =
+            later.type === 'assistant_message' || later.type === 'user_message'
+              ? later.content
+              : later.type === 'tool_result'
+                ? later.content
+                : undefined;
+          return typeof text === 'string' && text.indexOf(substring) !== -1;
+        });
+
+        if (!isReferencedLater) {
+          rot.set(i, {
+            category: 'unreferenced-large-output',
+            reason: 'Large tool result (' + tokens + ' tokens) never referenced again later in the transcript.',
+          });
+        }
+      }
+    })();
+
+    return entries.map(function (entry, i) {
+      var tokens = countTokens(entry.content || '');
+      var classification = rot.get(i);
+      var out = {};
+      for (var k in entry) if (Object.prototype.hasOwnProperty.call(entry, k)) out[k] = entry[k];
+      out.tokens = tokens;
+      out.rot = classification ? classification.category : null;
+      if (classification) out.rotReason = classification.reason;
+      return out;
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // analyze() / project() -- faithful port of src/analyze.ts
+  // ---------------------------------------------------------------------
+  var TOP_OFFENDERS_LIMIT = 10;
+  var SUMMARY_MAX_LENGTH = 80;
+
+  function summarize(entry) {
+    var raw =
+      entry.type === 'tool_use'
+        ? entry.toolName + (entry.filePath ? ' ' + entry.filePath : '')
+        : entry.type === 'tool_result'
+          ? entry.toolName + ' result' + (entry.filePath ? ' (' + entry.filePath + ')' : '')
+          : (entry.content || entry.type);
+
+    var collapsed = String(raw).trim().replace(/\s+/g, ' ');
+    return collapsed.length > SUMMARY_MAX_LENGTH ? collapsed.slice(0, SUMMARY_MAX_LENGTH) + '…' : collapsed;
+  }
+
+  function emptyByCategory() {
+    var result = {};
+    ALL_ROT_CATEGORIES.forEach(function (category) {
+      result[category] = { count: 0, tokens: 0 };
+    });
+    return result;
+  }
+
+  function analyze(entries) {
+    var classified = classify(entries);
+
+    var totalTokens = 0;
+    var rotTokens = 0;
+    var byCategory = emptyByCategory();
+
+    classified.forEach(function (entry) {
+      totalTokens += entry.tokens;
+      if (entry.rot) {
+        rotTokens += entry.tokens;
+        byCategory[entry.rot].count += 1;
+        byCategory[entry.rot].tokens += entry.tokens;
+      }
+    });
+
+    var liveTokens = totalTokens - rotTokens;
+    var rotPercentage = totalTokens > 0 ? (rotTokens / totalTokens) * 100 : 0;
+
+    var topOffenders = classified
+      .filter(function (entry) { return entry.rot !== null; })
+      .sort(function (a, b) { return b.tokens - a.tokens; })
+      .slice(0, TOP_OFFENDERS_LIMIT)
+      .map(function (entry) {
+        return { summary: summarize(entry), tokens: entry.tokens, category: entry.rot };
+      });
+
+    return {
+      totalTokens: totalTokens,
+      liveTokens: liveTokens,
+      rotTokens: rotTokens,
+      rotPercentage: rotPercentage,
+      byCategory: byCategory,
+      topOffenders: topOffenders,
+      entries: classified,
+    };
+  }
+
+  function project(report, modelContextWindow, turnsObserved) {
+    var avgTokensPerTurn = turnsObserved > 0 ? report.totalTokens / turnsObserved : 0;
+
+    var turnsRemaining =
+      avgTokensPerTurn > 0
+        ? Math.max(0, Math.floor((modelContextWindow - report.totalTokens) / avgTokensPerTurn))
+        : 0;
+
+    var contextWindowUsedPercentage =
+      modelContextWindow > 0 ? (report.totalTokens / modelContextWindow) * 100 : 0;
+
+    return {
+      turnsRemaining: turnsRemaining,
+      avgTokensPerTurn: avgTokensPerTurn,
+      contextWindowUsedPercentage: contextWindowUsedPercentage,
+    };
+  }
+
+  function estimateTurnsObserved(entries) {
+    var turns = entries.filter(function (entry) {
+      return entry.type === 'user_message' || entry.type === 'assistant_message';
+    }).length;
+    return turns > 0 ? turns : entries.length > 0 ? 1 : 0;
+  }
+
+  // ---------------------------------------------------------------------
+  // Generic transcript parser -- faithful port of parseGenericTranscript
+  // in src/parse.ts (accepts a plain JSON array of already-shaped turns).
+  // ---------------------------------------------------------------------
+  var VALID_TYPES = {
+    user_message: true,
+    assistant_message: true,
+    tool_use: true,
+    tool_result: true,
+    system_reminder: true,
+  };
+
+  function isRecord(value) {
+    return typeof value === 'object' && value !== null;
+  }
+
+  function normalizeGenericEntry(value) {
+    if (!isRecord(value)) return undefined;
+
+    var timestamp = typeof value.timestamp === 'string' ? value.timestamp : undefined;
+    var type = typeof value.type === 'string' ? value.type : undefined;
+    var role = typeof value.role === 'string' ? value.role : undefined;
+
+    if (!type || !VALID_TYPES[type]) {
+      if (role === 'user') type = 'user_message';
+      else if (role === 'assistant') type = 'assistant_message';
+      else if (role === 'tool') type = 'tool_result';
+      else if (role === 'system') type = 'system_reminder';
+      else return undefined;
+    }
+
+    switch (type) {
+      case 'user_message': {
+        if (typeof value.content !== 'string') return undefined;
+        return Object.assign({ type: 'user_message', role: 'user', content: value.content }, timestamp ? { timestamp: timestamp } : {});
+      }
+      case 'assistant_message': {
+        if (typeof value.content !== 'string') return undefined;
+        return Object.assign({ type: 'assistant_message', role: 'assistant', content: value.content }, timestamp ? { timestamp: timestamp } : {});
+      }
+      case 'tool_use': {
+        var toolName = typeof value.toolName === 'string' ? value.toolName : undefined;
+        var toolUseId = typeof value.toolUseId === 'string' ? value.toolUseId : undefined;
+        if (!toolName || !toolUseId) return undefined;
+        var filePath = typeof value.filePath === 'string' ? value.filePath : undefined;
+        var content = typeof value.content === 'string' ? value.content : undefined;
+        return Object.assign(
+          { type: 'tool_use', role: 'assistant', toolName: toolName, toolUseId: toolUseId },
+          filePath ? { filePath: filePath } : {},
+          content !== undefined ? { content: content } : {},
+          timestamp ? { timestamp: timestamp } : {}
+        );
+      }
+      case 'tool_result': {
+        var tName = typeof value.toolName === 'string' ? value.toolName : '';
+        var tId = typeof value.toolUseId === 'string' ? value.toolUseId : undefined;
+        var tContent = typeof value.content === 'string' ? value.content : undefined;
+        if (!tId || tContent === undefined) return undefined;
+        var tFilePath = typeof value.filePath === 'string' ? value.filePath : undefined;
+        return Object.assign(
+          { type: 'tool_result', role: 'tool', toolName: tName, toolUseId: tId, content: tContent },
+          tFilePath ? { filePath: tFilePath } : {},
+          timestamp ? { timestamp: timestamp } : {}
+        );
+      }
+      case 'system_reminder': {
+        if (typeof value.content !== 'string') return undefined;
+        return Object.assign({ type: 'system_reminder', role: 'system', content: value.content }, timestamp ? { timestamp: timestamp } : {});
+      }
+      default:
+        return undefined;
+    }
+  }
+
+  function parseGenericTranscript(raw) {
+    if (typeof raw !== 'string' || raw.length === 0) return [];
+
+    var parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      throw new Error('Could not parse JSON: ' + e.message);
+    }
+
+    if (!Array.isArray(parsed)) {
+      throw new Error('Expected a JSON array of transcript entries.');
+    }
+
+    var entries = [];
+    for (var i = 0; i < parsed.length; i++) {
+      try {
+        var entry = normalizeGenericEntry(parsed[i]);
+        if (entry) entries.push(entry);
+      } catch (e) {
+        continue;
+      }
+    }
+
+    return entries;
+  }
+
+  // ---------------------------------------------------------------------
+  // DEMO_TRANSCRIPT -- ported verbatim from src/demo-data.ts
+  // ---------------------------------------------------------------------
+  var DEMO_TRANSCRIPT = [
+    { type: 'system_reminder', role: 'system', content: 'Environment info (session snapshot): cwd is /home/dev/projects/api-gateway, git branch is main, 0 files staged.', timestamp: '2026-07-10T14:02:01.000Z' },
+    { type: 'user_message', role: 'user', content: "We're seeing intermittent 429s slip through under load even though the rate limiter should be blocking them. Users report bursts of requests right at the top of a new minute get through way over the limit. Can you look at src/rateLimiter.ts and figure out what's going on?", timestamp: '2026-07-10T14:02:05.000Z' },
+    { type: 'system_reminder', role: 'system', content: '[{"content":"Reproduce the burst-at-window-boundary bug","status":"pending"},{"content":"Read rateLimiter.ts and understand the windowing logic","status":"pending"},{"content":"Fix the boundary bug","status":"pending"},{"content":"Add a regression test","status":"pending"}]', timestamp: '2026-07-10T14:02:06.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Read', toolUseId: 'tu_001', filePath: 'src/rateLimiter.ts', timestamp: '2026-07-10T14:02:10.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Read', toolUseId: 'tu_001', filePath: 'src/rateLimiter.ts', content: "export class RateLimiter {\n  private hits = new Map<string, number[]>();\n  constructor(private readonly limit: number, private readonly windowMs: number) {}\n\n  private currentWindowStart(now: number): number {\n    return Math.floor(now / this.windowMs) * this.windowMs;\n  }\n\n  allow(key: string, now: number = Date.now()): boolean {\n    const windowStart = this.currentWindowStart(now);\n    const timestamps = this.hits.get(key) ?? [];\n    const inWindow = timestamps.filter((t) => t >= windowStart);\n    if (inWindow.length >= this.limit) {\n      this.hits.set(key, inWindow);\n      return false;\n    }\n    inWindow.push(now);\n    this.hits.set(key, inWindow);\n    return true;\n  }\n}\n", timestamp: '2026-07-10T14:02:10.500Z' },
+    { type: 'assistant_message', role: 'assistant', content: "Found it. `currentWindowStart` snaps to fixed-size buckets aligned to epoch time, not a rolling window from each request. So a client can send `limit` requests in the last millisecond of one bucket, then immediately send `limit` more in the first millisecond of the next bucket -- that's 2x the limit in a couple of milliseconds, which matches the burst reports. This is the classic fixed-window counter problem; a sliding window (or sliding-window log with a rolling cutoff) fixes it. Let me check how the limiter is wired up in the server first.", timestamp: '2026-07-10T14:02:22.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Grep', toolUseId: 'tu_002', filePath: 'RateLimiter', timestamp: '2026-07-10T14:02:23.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Grep', toolUseId: 'tu_002', content: "src/server.ts:12:import { RateLimiter } from './rateLimiter';\nsrc/server.ts:18:const limiter = new RateLimiter(100, 60_000);\nsrc/rateLimiter.test.ts:3:import { RateLimiter } from '../src/rateLimiter';", timestamp: '2026-07-10T14:02:23.400Z' },
+    { type: 'assistant_message', role: 'assistant', content: 'Three call sites. Let me double check I got the full picture -- re-running that search to be sure nothing scrolled past.', timestamp: '2026-07-10T14:02:24.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Grep', toolUseId: 'tu_003', filePath: 'RateLimiter', timestamp: '2026-07-10T14:02:24.500Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Grep', toolUseId: 'tu_003', content: "src/server.ts:12:import { RateLimiter } from './rateLimiter';\nsrc/server.ts:18:const limiter = new RateLimiter(100, 60_000);\nsrc/rateLimiter.test.ts:3:import { RateLimiter } from '../src/rateLimiter';", timestamp: '2026-07-10T14:02:24.900Z' },
+    { type: 'user_message', role: 'user', content: 'Good catch. Before you change anything, can you write a quick failing test that reproduces the boundary burst?', timestamp: '2026-07-10T14:02:40.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Read', toolUseId: 'tu_004', filePath: 'src/rateLimiter.ts', timestamp: '2026-07-10T14:02:41.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Read', toolUseId: 'tu_004', filePath: 'src/rateLimiter.ts', content: "export class RateLimiter {\n  private hits = new Map<string, number[]>();\n  constructor(private readonly limit: number, private readonly windowMs: number) {}\n\n  private currentWindowStart(now: number): number {\n    return Math.floor(now / this.windowMs) * this.windowMs;\n  }\n\n  allow(key: string, now: number = Date.now()): boolean {\n    const windowStart = this.currentWindowStart(now);\n    const timestamps = this.hits.get(key) ?? [];\n    const inWindow = timestamps.filter((t) => t >= windowStart);\n    if (inWindow.length >= this.limit) {\n      this.hits.set(key, inWindow);\n      return false;\n    }\n    inWindow.push(now);\n    this.hits.set(key, inWindow);\n    return true;\n  }\n}\n", timestamp: '2026-07-10T14:02:41.400Z' },
+    { type: 'system_reminder', role: 'system', content: 'Environment info (session snapshot): cwd is /home/dev/projects/api-gateway, git branch is main, 1 file modified (untracked test file pending).', timestamp: '2026-07-10T14:03:00.000Z' },
+    { type: 'assistant_message', role: 'assistant', content: "Writing a test that hammers the limiter right at a window boundary using a fake clock, so it doesn't flake on real timing.", timestamp: '2026-07-10T14:03:05.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Edit', toolUseId: 'tu_005', filePath: 'src/rateLimiter.test.ts', timestamp: '2026-07-10T14:03:10.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Edit', toolUseId: 'tu_005', filePath: 'src/rateLimiter.test.ts', content: "it('does not allow more than 2x the limit across a window boundary', () => {\n  const limiter = new RateLimiter(5, 1000);\n  const boundary = 60_000; // aligned to a 1000ms window edge\n  for (let i = 0; i < 5; i++) {\n    expect(limiter.allow('k', boundary - 1)).toBe(true);\n  }\n  expect(limiter.allow('k', boundary - 1)).toBe(false);\n  // Bug: the next bucket resets the counter to zero immediately, so a\n  // client can burst again 1ms later far above the intended rate.\n  for (let i = 0; i < 5; i++) {\n    expect(limiter.allow('k', boundary)).toBe(true);\n  }\n});", timestamp: '2026-07-10T14:03:10.600Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Bash', toolUseId: 'tu_006', content: 'npm test -- rateLimiter', timestamp: '2026-07-10T14:03:15.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Bash', toolUseId: 'tu_006', content: "> api-gateway@1.4.2 test\n> vitest run rateLimiter\n\n RUN  v4.1.10 /home/dev/projects/api-gateway\n\nstdout | src/rateLimiter.test.ts\n[vitest] preparing environment, mode=node, isolate=true, threads=4\n[vitest] resolved config from vitest.config.ts: { environment: 'node', globals: false, testTimeout: 5000, hookTimeout: 10000 }\n[vitest] loading setup files: none configured\n[vitest] collecting test files matched by pattern \"rateLimiter\"\n[vitest] matched files:\n  - src/rateLimiter.test.ts\n[vitest] transforming src/rateLimiter.test.ts via esbuild (target=node20, format=esm, sourcemap=inline)\n[vitest] transform took 14ms, output size 2114 bytes\n[vitest] resolving imports for src/rateLimiter.test.ts\n[vitest]   -> ../src/rateLimiter (resolved to /home/dev/projects/api-gateway/src/rateLimiter.ts)\n[vitest]   -> vitest (resolved to node_modules/vitest/dist/index.js)\n[vitest] transforming src/rateLimiter.ts via esbuild (target=node20, format=esm, sourcemap=inline)\n[vitest] transform took 6ms, output size 812 bytes\n[vitest] starting worker pool with 4 threads (pool=threads, isolate=true)\n[vitest] worker 0 booted in 41ms\n[vitest] worker 0 executing suite \"RateLimiter\" (3 tests found)\n[vitest]   test 1/3: \"allows requests under the limit\" -- scheduling\n[vitest]   test 1/3: \"allows requests under the limit\" -- start\n[vitest]   test 1/3: \"allows requests under the limit\" -- PASS (2ms)\n[vitest]   test 2/3: \"blocks requests over the limit within a window\" -- scheduling\n[vitest]   test 2/3: \"blocks requests over the limit within a window\" -- start\n[vitest]   test 2/3: \"blocks requests over the limit within a window\" -- PASS (1ms)\n[vitest]   test 3/3: \"does not allow more than 2x the limit across a window boundary\" -- scheduling\n[vitest]   test 3/3: \"does not allow more than 2x the limit across a window boundary\" -- start\n[vitest]   test 3/3: \"does not allow more than 2x the limit across a window boundary\" -- executing assertions\n[vitest]     assertion 1/11: expect(limiter.allow('k', 59999)).toBe(true) -- PASS\n[vitest]     assertion 2/11: expect(limiter.allow('k', 59999)).toBe(true) -- PASS\n[vitest]     assertion 3/11: expect(limiter.allow('k', 59999)).toBe(true) -- PASS\n[vitest]     assertion 4/11: expect(limiter.allow('k', 59999)).toBe(true) -- PASS\n[vitest]     assertion 5/11: expect(limiter.allow('k', 59999)).toBe(true) -- PASS\n[vitest]     assertion 6/11: expect(limiter.allow('k', 59999)).toBe(false) -- PASS\n[vitest]     assertion 7/11: expect(limiter.allow('k', 60000)).toBe(true) -- FAIL\n\n FAIL  src/rateLimiter.test.ts > RateLimiter > does not allow more than 2x the limit across a window boundary\nAssertionError: expected false to be true // Object.is equality\n\nThis assertion was inverted from what the test author intended while\ndrafting -- it actually demonstrates the bug (the call *does* return true,\nproving the burst gets through), and the raw diagnostic trace below is kept\nhere only because the runner always dumps it, not because anyone needs to\nread it: the fix is in the source, not the test.\n\n - Expected\n + Received\n\n- true\n+ false\n\n  at /home/dev/projects/api-gateway/src/rateLimiter.test.ts:34:38\n  at Proxy.<anonymous> (/home/dev/projects/api-gateway/node_modules/@vitest/runner/dist/index.js:158:17)\n  at runTest (/home/dev/projects/api-gateway/node_modules/@vitest/runner/dist/index.js:938:17)\n  at processTicksAndRejections (node:internal/process/task_queues:95:5)\n  at runSuite (/home/dev/projects/api-gateway/node_modules/@vitest/runner/dist/index.js:1071:15)\n  at runSuite (/home/dev/projects/api-gateway/node_modules/@vitest/runner/dist/index.js:1071:15)\n  at runFiles (/home/dev/projects/api-gateway/node_modules/@vitest/runner/dist/index.js:1130:5)\n  at startTests (/home/dev/projects/api-gateway/node_modules/@vitest/runner/dist/index.js:1149:3)\n  at /home/dev/projects/api-gateway/node_modules/vitest/dist/chunks/runtime-runBaseTests.js:126:11\n  at withEnv (/home/dev/projects/api-gateway/node_modules/vitest/dist/chunks/runtime-runBaseTests.js:79:5\n\n[vitest] worker 0 finished suite \"RateLimiter\" in 19ms (2 passed, 1 failed)\n[vitest] worker pool draining, 4 threads\n[vitest] worker 0 exited cleanly\n[vitest] worker 1 never received work, exiting idle\n[vitest] worker 2 never received work, exiting idle\n[vitest] worker 3 never received work, exiting idle\n[vitest] coverage collection skipped (no --coverage flag)\n[vitest] writing junit report skipped (no --reporter=junit)\n[vitest] cache written to node_modules/.vite/vitest/results-v3.json (412 bytes)\n\n Test Files  1 failed (1)\n      Tests  1 failed | 2 passed (3)\n   Start at  14:03:15\n   Duration  187ms (transform 20ms, setup 0ms, collect 41ms, tests 22ms, environment 0ms, prepare 83ms)\n\n ELIFECYCLE  Test failed. See above for more details.", timestamp: '2026-07-10T14:03:15.900Z' },
+    { type: 'assistant_message', role: 'assistant', content: "As expected, the third test fails: the boundary burst gets through (the assertion that it should be blocked returns true instead). That confirms the repro. Now let's look at how the server wires up the limiter before I touch the windowing logic, in case the fix needs a config change too.", timestamp: '2026-07-10T14:03:20.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Read', toolUseId: 'tu_007', filePath: 'src/server.ts', timestamp: '2026-07-10T14:03:25.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Read', toolUseId: 'tu_007', filePath: 'src/server.ts', content: "import express from 'express';\nimport { RateLimiter } from './rateLimiter';\n\nconst app = express();\nconst limiter = new RateLimiter(100, 60_000);\n\napp.use((req, res, next) => {\n  const key = req.ip ?? 'unknown';\n  if (!limiter.allow(key)) {\n    res.status(429).json({ error: 'rate limit exceeded' });\n    return;\n  }\n  next();\n});\n\napp.listen(3000);\n", timestamp: '2026-07-10T14:03:25.400Z' },
+    { type: 'system_reminder', role: 'system', content: '[{"content":"Reproduce the burst-at-window-boundary bug","status":"completed"},{"content":"Read rateLimiter.ts and understand the windowing logic","status":"completed"},{"content":"Fix the boundary bug","status":"in_progress"},{"content":"Add a regression test","status":"completed"}]', timestamp: '2026-07-10T14:03:30.000Z' },
+    { type: 'assistant_message', role: 'assistant', content: "Config is fine, no changes needed there. I'll replace the fixed-bucket windowing with a true sliding window: instead of snapping to `Math.floor(now / windowMs) * windowMs`, keep a rolling log of hit timestamps per key and count only the ones within `windowMs` of `now`, regardless of bucket alignment.", timestamp: '2026-07-10T14:03:40.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Edit', toolUseId: 'tu_008', filePath: 'src/rateLimiter.ts', timestamp: '2026-07-10T14:03:45.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Edit', toolUseId: 'tu_008', filePath: 'src/rateLimiter.ts', content: "export class RateLimiter {\n  private hits = new Map<string, number[]>();\n  constructor(private readonly limit: number, private readonly windowMs: number) {}\n\n  allow(key: string, now: number = Date.now()): boolean {\n    const cutoff = now - this.windowMs;\n    const timestamps = this.hits.get(key) ?? [];\n    const inWindow = timestamps.filter((t) => t > cutoff);\n    if (inWindow.length >= this.limit) {\n      this.hits.set(key, inWindow);\n      return false;\n    }\n    inWindow.push(now);\n    this.hits.set(key, inWindow);\n    return true;\n  }\n}\n", timestamp: '2026-07-10T14:03:45.700Z' },
+    { type: 'user_message', role: 'user', content: 'Nice, does the test suite pass now?', timestamp: '2026-07-10T14:04:00.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Bash', toolUseId: 'tu_009', content: 'npm test -- rateLimiter', timestamp: '2026-07-10T14:04:02.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Bash', toolUseId: 'tu_009', content: '> api-gateway@1.4.2 test\n> vitest run rateLimiter\n\n Test Files  1 passed (1)\n      Tests  3 passed (3)\n   Start at  14:04:02\n   Duration  61ms', timestamp: '2026-07-10T14:04:02.400Z' },
+    { type: 'system_reminder', role: 'system', content: 'Environment info (session snapshot): cwd is /home/dev/projects/api-gateway, git branch is main, 2 files modified (rateLimiter.ts, rateLimiter.test.ts).', timestamp: '2026-07-10T14:04:05.000Z' },
+    { type: 'assistant_message', role: 'assistant', content: "All 3 tests pass now. While I'm in here, let's also add a periodic sweep so `hits` doesn't grow unbounded for keys that stop making requests -- right now old timestamps for inactive keys just sit in the map forever.", timestamp: '2026-07-10T14:04:10.000Z' },
+    { type: 'user_message', role: 'user', content: "Good idea. Also double check server.ts doesn't need updating for the new constructor signature.", timestamp: '2026-07-10T14:04:15.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Edit', toolUseId: 'tu_010', filePath: 'src/server.ts', timestamp: '2026-07-10T14:04:20.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Edit', toolUseId: 'tu_010', filePath: 'src/server.ts', content: "import express from 'express';\nimport { RateLimiter } from './rateLimiter';\n\nconst app = express();\n// Constructor signature is unchanged (limit, windowMs); no call-site update needed.\nconst limiter = new RateLimiter(100, 60_000);\n\napp.use((req, res, next) => {\n  const key = req.ip ?? 'unknown';\n  if (!limiter.allow(key)) {\n    res.status(429).json({ error: 'rate limit exceeded' });\n    return;\n  }\n  next();\n});\n\napp.listen(3000);\n", timestamp: '2026-07-10T14:04:20.600Z' },
+    { type: 'assistant_message', role: 'assistant', content: 'Confirmed -- constructor signature is unchanged so server.ts only needed a clarifying comment. Now adding a `sweep()` method plus a `setInterval` hook so stale per-key entries get pruned periodically.', timestamp: '2026-07-10T14:04:30.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Edit', toolUseId: 'tu_011', filePath: 'src/rateLimiter.ts', timestamp: '2026-07-10T14:04:35.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Edit', toolUseId: 'tu_011', filePath: 'src/rateLimiter.ts', content: "  sweep(now: number = Date.now()): void {\n    const cutoff = now - this.windowMs;\n    for (const [key, timestamps] of this.hits) {\n      const remaining = timestamps.filter((t) => t > cutoff);\n      if (remaining.length === 0) this.hits.delete(key);\n      else this.hits.set(key, remaining);\n    }\n  }\n", timestamp: '2026-07-10T14:04:35.500Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Bash', toolUseId: 'tu_012', content: 'npm test', timestamp: '2026-07-10T14:04:40.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Bash', toolUseId: 'tu_012', content: '> api-gateway@1.4.2 test\n> vitest run\n\n Test Files  4 passed (4)\n      Tests  22 passed (22)\n   Start at  14:04:40\n   Duration  340ms', timestamp: '2026-07-10T14:04:40.500Z' },
+    { type: 'assistant_message', role: 'assistant', content: "All green. Let me add a line to README.md documenting the sweep so it doesn't look like dead code later.", timestamp: '2026-07-10T14:04:45.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Read', toolUseId: 'tu_013', filePath: 'README.md', timestamp: '2026-07-10T14:04:46.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Read', toolUseId: 'tu_013', filePath: 'README.md', content: '# api-gateway\n\nA small Express gateway with per-IP rate limiting.\n\n## Rate limiting\n\n`RateLimiter(limit, windowMs)` allows up to `limit` requests per key in any\nrolling `windowMs` window.\n', timestamp: '2026-07-10T14:04:46.300Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Edit', toolUseId: 'tu_014', filePath: 'README.md', timestamp: '2026-07-10T14:04:48.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Edit', toolUseId: 'tu_014', filePath: 'README.md', content: '# api-gateway\n\nA small Express gateway with per-IP rate limiting.\n\n## Rate limiting\n\n`RateLimiter(limit, windowMs)` allows up to `limit` requests per key in any\nrolling `windowMs` window. Call `sweep()` periodically (e.g. from a\n`setInterval`) to prune stale per-key entries for keys that stopped sending\nrequests, so memory use stays bounded over long-running processes.\n', timestamp: '2026-07-10T14:04:48.400Z' },
+    { type: 'system_reminder', role: 'system', content: '[{"content":"Reproduce the burst-at-window-boundary bug","status":"completed"},{"content":"Read rateLimiter.ts and understand the windowing logic","status":"completed"},{"content":"Fix the boundary bug","status":"completed"},{"content":"Add a regression test","status":"completed"},{"content":"Add a sweep() to bound memory for inactive keys","status":"completed"},{"content":"Document sweep() in README","status":"completed"}]', timestamp: '2026-07-10T14:04:50.000Z' },
+    { type: 'system_reminder', role: 'system', content: 'Environment info (session snapshot): cwd is /home/dev/projects/api-gateway, git branch is main, 3 files modified (rateLimiter.ts, rateLimiter.test.ts, server.ts), 1 file modified (README.md).', timestamp: '2026-07-10T14:04:51.000Z' },
+    { type: 'assistant_message', role: 'assistant', content: "Summary: the rate limiter used fixed epoch-aligned buckets, so a client could burst up to 2x the limit across a bucket boundary. Switched to a true rolling window (filter by `now - windowMs` cutoff instead of bucket snapping), added a `sweep()` method to bound memory for inactive keys, added a regression test that pins the boundary behavior, and documented `sweep()` in the README. Full suite is green (22/22).", timestamp: '2026-07-10T14:04:55.000Z' },
+    { type: 'user_message', role: 'user', content: 'Perfect, thank you. One last thing -- can you check rateLimiter.test.ts has a test for the sweep() method too?', timestamp: '2026-07-10T14:05:00.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Grep', toolUseId: 'tu_015', filePath: 'sweep', timestamp: '2026-07-10T14:05:02.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Grep', toolUseId: 'tu_015', content: 'No matches found in src/rateLimiter.test.ts', timestamp: '2026-07-10T14:05:02.300Z' },
+    { type: 'assistant_message', role: 'assistant', content: "Good catch, there isn't one yet. I'll add a test that ages out an inactive key and asserts sweep() removes it from the internal map size.", timestamp: '2026-07-10T14:05:05.000Z' },
+    { type: 'tool_use', role: 'assistant', toolName: 'Edit', toolUseId: 'tu_016', filePath: 'src/rateLimiter.test.ts', timestamp: '2026-07-10T14:05:10.000Z' },
+    { type: 'tool_result', role: 'tool', toolName: 'Edit', toolUseId: 'tu_016', filePath: 'src/rateLimiter.test.ts', content: "it('sweep() prunes entries for keys with no recent hits', () => {\n  const limiter = new RateLimiter(5, 1000);\n  limiter.allow('stale-key', 0);\n  limiter.sweep(5000);\n  expect(limiter.allow('stale-key', 5000)).toBe(true);\n});", timestamp: '2026-07-10T14:05:10.500Z' },
+  ];
+
+  // ---------------------------------------------------------------------
+  // UI wiring
+  // ---------------------------------------------------------------------
+  var els = {
+    modelSelect: document.getElementById('model-select'),
+    input: document.getElementById('input-json'),
+    status: document.getElementById('status'),
+    report: document.getElementById('report'),
+    btnDemo: document.getElementById('btn-demo'),
+    btnAnalyze: document.getElementById('btn-analyze'),
+    btnClear: document.getElementById('btn-clear'),
+    statTotal: document.getElementById('stat-total'),
+    statLive: document.getElementById('stat-live'),
+    statRot: document.getElementById('stat-rot'),
+    statPct: document.getElementById('stat-pct'),
+    barLive: document.getElementById('bar-live'),
+    barRot: document.getElementById('bar-rot'),
+    categoryBody: document.getElementById('category-body'),
+    offendersBody: document.getElementById('offenders-body'),
+    projectionText: document.getElementById('projection-text'),
+    projectionNote: document.getElementById('projection-note'),
+  };
+
+  Object.keys(MODEL_CONTEXT_WINDOWS).forEach(function (name) {
+    var opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name + ' (' + MODEL_CONTEXT_WINDOWS[name].toLocaleString('en-US') + ' tokens)';
+    els.modelSelect.appendChild(opt);
+  });
+  els.modelSelect.value = 'claude-sonnet-5';
+
+  function formatNumber(n) {
+    return Math.round(n).toLocaleString('en-US');
+  }
+
+  function setStatus(msg, isError) {
+    els.status.textContent = msg || '';
+    els.status.className = 'status' + (isError ? ' error' : '');
+  }
+
+  function renderReport(entries) {
+    var report = analyze(entries);
+    var contextWindow = MODEL_CONTEXT_WINDOWS[els.modelSelect.value] || DEFAULT_CONTEXT_WINDOW;
+    var turnsObserved = estimateTurnsObserved(entries);
+    var projection = project(report, contextWindow, turnsObserved);
+
+    els.statTotal.textContent = formatNumber(report.totalTokens);
+    els.statLive.textContent = formatNumber(report.liveTokens);
+    els.statRot.textContent = formatNumber(report.rotTokens);
+    els.statPct.textContent = report.rotPercentage.toFixed(1) + '%';
+
+    var livePct = report.totalTokens > 0 ? (report.liveTokens / report.totalTokens) * 100 : 0;
+    var rotPct = report.totalTokens > 0 ? (report.rotTokens / report.totalTokens) * 100 : 0;
+    els.barLive.style.width = livePct + '%';
+    els.barRot.style.width = rotPct + '%';
+
+    els.categoryBody.innerHTML = '';
+    ALL_ROT_CATEGORIES.forEach(function (category) {
+      var stats = report.byCategory[category];
+      var tr = document.createElement('tr');
+      var tdLabel = document.createElement('td');
+      tdLabel.textContent = CATEGORY_LABELS[category];
+      var tdCount = document.createElement('td');
+      tdCount.textContent = formatNumber(stats.count);
+      var tdTokens = document.createElement('td');
+      tdTokens.textContent = formatNumber(stats.tokens);
+      tr.appendChild(tdLabel);
+      tr.appendChild(tdCount);
+      tr.appendChild(tdTokens);
+      els.categoryBody.appendChild(tr);
+    });
+
+    els.offendersBody.innerHTML = '';
+    if (report.topOffenders.length === 0) {
+      var trEmpty = document.createElement('tr');
+      var tdEmpty = document.createElement('td');
+      tdEmpty.colSpan = 4;
+      tdEmpty.textContent = 'No rot detected in this transcript.';
+      tdEmpty.style.color = 'var(--text-muted)';
+      trEmpty.appendChild(tdEmpty);
+      els.offendersBody.appendChild(trEmpty);
+    } else {
+      report.topOffenders.forEach(function (offender, idx) {
+        var tr = document.createElement('tr');
+
+        var tdIdx = document.createElement('td');
+        tdIdx.textContent = String(idx + 1);
+
+        var tdCat = document.createElement('td');
+        var pill = document.createElement('span');
+        pill.className = 'cat-pill';
+        pill.textContent = CATEGORY_LABELS[offender.category];
+        tdCat.appendChild(pill);
+
+        var tdTokens = document.createElement('td');
+        tdTokens.textContent = formatNumber(offender.tokens);
+
+        var tdSummary = document.createElement('td');
+        tdSummary.className = 'summary-cell';
+        tdSummary.textContent = offender.summary;
+
+        tr.appendChild(tdIdx);
+        tr.appendChild(tdCat);
+        tr.appendChild(tdTokens);
+        tr.appendChild(tdSummary);
+        els.offendersBody.appendChild(tr);
+      });
+    }
+
+    els.projectionText.textContent =
+      'At this rate, roughly ' + formatNumber(projection.turnsRemaining) +
+      ' turns until compaction (context window ' + projection.contextWindowUsedPercentage.toFixed(1) + '% used, ' +
+      formatNumber(projection.avgTokensPerTurn) + ' tokens/turn average).';
+    els.projectionNote.textContent =
+      'Based on ' + formatNumber(turnsObserved) + ' observed turn(s) and a ' +
+      formatNumber(contextWindow) + '-token context window for ' + els.modelSelect.value + '.';
+
+    els.report.hidden = false;
+  }
+
+  els.btnDemo.addEventListener('click', function () {
+    els.input.value = JSON.stringify(DEMO_TRANSCRIPT, null, 2);
+    setStatus('Loaded demo session (' + DEMO_TRANSCRIPT.length + ' entries).');
+    try {
+      renderReport(DEMO_TRANSCRIPT);
+    } catch (e) {
+      setStatus('Error analyzing demo transcript: ' + e.message, true);
+    }
+  });
+
+  els.btnAnalyze.addEventListener('click', function () {
+    var raw = els.input.value.trim();
+    if (!raw) {
+      setStatus('Paste a JSON transcript first, or click "Load demo session".', true);
+      return;
+    }
+    try {
+      var entries = parseGenericTranscript(raw);
+      if (entries.length === 0) {
+        setStatus('No valid transcript entries found. Check the JSON shape (see placeholder text for an example).', true);
+        return;
+      }
+      renderReport(entries);
+      setStatus('Analyzed ' + entries.length + ' entries.');
+    } catch (e) {
+      setStatus('Error: ' + e.message, true);
+    }
+  });
+
+  els.btnClear.addEventListener('click', function () {
+    els.input.value = '';
+    els.report.hidden = true;
+    setStatus('');
+  });
+
+  els.modelSelect.addEventListener('change', function () {
+    var raw = els.input.value.trim();
+    if (!raw || els.report.hidden) return;
+    try {
+      var entries = parseGenericTranscript(raw);
+      if (entries.length > 0) renderReport(entries);
+    } catch (e) {
+      // ignore; user hasn't clicked Analyze with this content
+    }
+  });
+})();
+</script>
+</body>
+</html>
